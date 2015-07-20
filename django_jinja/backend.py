@@ -22,8 +22,8 @@ from django.middleware.csrf import get_token
 from django.template import RequestContext
 from django.template import TemplateDoesNotExist
 from django.template import TemplateSyntaxError
-from django.template import Origin
 from django.template import Context
+from django.template.base import Origin
 from django.template.backends.base import BaseEngine
 from django.template.backends.utils import csrf_input_lazy
 from django.template.backends.utils import csrf_token_lazy
