@@ -22,6 +22,8 @@ from django.middleware.csrf import get_token
 from django.template import RequestContext
 from django.template import TemplateDoesNotExist
 from django.template import TemplateSyntaxError
+from django.template import Origin
+from django.template import Context
 from django.template.backends.base import BaseEngine
 from django.template.backends.utils import csrf_input_lazy
 from django.template.backends.utils import csrf_token_lazy
@@ -60,6 +62,18 @@ class Template(object):
             # Support for django context processors
             for processor in self.backend.context_processors:
                 context.update(processor(request))
+                
+        if settings.TEMPLATE_DEBUG:
+            from django.test import signals
+            self.template.origin = Origin(self.template.filename)
+            context_obj = Context(context)
+
+            context_processors = {}
+            for processor in self.backend.context_processors:
+                context_processors[processor.__name__] = processor(request)
+            context_obj.context_processors = context_processors
+
+            signals.template_rendered.send(sender=self, template=self.template, context=context_obj)
 
         return self.template.render(context)
 
