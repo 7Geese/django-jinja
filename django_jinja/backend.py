@@ -170,7 +170,7 @@ class Jinja2(BaseEngine):
 
     @cached_property
     def template_loaders(self):
-        return [loaders.AppLoader(), loaders.FileSystemLoader()]
+        return [loaders.AppLoader(self), loaders.FileSystemLoader(self)]
 
     def _initialize_builtins(self, filters=None, tests=None, globals=None, constants=None):
         def insert(data, name, value):
