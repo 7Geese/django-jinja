@@ -33,10 +33,13 @@ from django.utils.encoding import smart_text
 from django.utils.functional import SimpleLazyObject
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
+from django.utils.deprecation import RemovedInDjango110Warning
 
 from . import base
 from . import builtins
 from . import utils
+from . import loaders
+import warnings
 
 
 class Template(object):
@@ -164,6 +167,10 @@ class Jinja2(BaseEngine):
 
         base._initialize_thirdparty(self.env)
         base._initialize_bytecode_cache(self.env)
+
+    @cached_property
+    def template_loaders(self):
+        return [loaders.AppLoader(), loaders.FileSystemLoader()]
 
     def _initialize_builtins(self, filters=None, tests=None, globals=None, constants=None):
         def insert(data, name, value):
