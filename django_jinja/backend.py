@@ -72,8 +72,9 @@ class Template(object):
             context_obj = Context(context)
 
             context_processors = {}
-            for processor in self.backend.context_processors:
-                context_processors[processor.__name__] = processor(request)
+            if request is not None:
+                for processor in self.backend.context_processors:
+                    context_processors[processor.__name__] = processor(request)
             context_obj.context_processors = context_processors
 
             signals.template_rendered.send(sender=self, template=self.template, context=context_obj)
