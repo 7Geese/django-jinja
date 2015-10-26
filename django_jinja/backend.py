@@ -22,6 +22,8 @@ from django.middleware.csrf import get_token
 from django.template import RequestContext
 from django.template import TemplateDoesNotExist
 from django.template import TemplateSyntaxError
+from django.template import Context
+from django.template.base import Origin
 from django.template.backends.base import BaseEngine
 from django.template.backends.utils import csrf_input_lazy
 from django.template.backends.utils import csrf_token_lazy
@@ -31,10 +33,13 @@ from django.utils.encoding import smart_text
 from django.utils.functional import SimpleLazyObject
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
+from django.utils.deprecation import RemovedInDjango110Warning
 
 from . import base
 from . import builtins
 from . import utils
+from . import loaders
+import warnings
 
 
 class Template(object):
@@ -60,6 +65,19 @@ class Template(object):
             # Support for django context processors
             for processor in self.backend.context_processors:
                 context.update(processor(request))
+                
+        if settings.TEMPLATE_DEBUG:
+            from django.test import signals
+            self.template.origin = Origin(self.template.filename)
+            context_obj = Context(context)
+
+            context_processors = {}
+            if request is not None:
+                for processor in self.backend.context_processors:
+                    context_processors[processor.__name__] = processor(request)
+            context_obj.context_processors = context_processors
+
+            signals.template_rendered.send(sender=self, template=self.template, context=context_obj)
 
         return self.template.render(context)
 
@@ -150,6 +168,10 @@ class Jinja2(BaseEngine):
 
         base._initialize_thirdparty(self.env)
         base._initialize_bytecode_cache(self.env)
+
+    @cached_property
+    def template_loaders(self):
+        return [loaders.AppLoader(self), loaders.FileSystemLoader(self)]
 
     def _initialize_builtins(self, filters=None, tests=None, globals=None, constants=None):
         def insert(data, name, value):
